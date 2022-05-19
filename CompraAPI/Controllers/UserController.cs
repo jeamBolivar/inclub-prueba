@@ -17,31 +17,31 @@ namespace CompraAPI.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<User> Get()
+        public IEnumerable<User> GetAllUsers()
         {
             return _userRepository.GetAll();
         }
         [HttpGet("{id}")]
-        public User Get(int id)
+        public User GetUser(int id)
         {
             return _userRepository.GetById(id);
         }
 
         [HttpPost]
-        public void Insert([FromBody]User user)
+        public void CreateUser([FromBody]User user)
         {
             _userRepository.Add(user);
         }
 
         [HttpPut("{id}")]
-        public void Update(int id,[FromBody]User user)
+        public void UpdateUser(int id,[FromBody]User user)
         {
             user.id = id;
             _userRepository.Update(user);
         }
 
         [HttpDelete]
-        public void Delete(int id)
+        public void DeleteUser(int id)
         {
             _userRepository.Delete(id);
         }
