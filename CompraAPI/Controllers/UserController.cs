@@ -1,6 +1,7 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using CompraAPI.Interfaces;
 using CompraAPI.Model;
-using CompraAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CompraAPI.Controllers
@@ -9,22 +10,22 @@ namespace CompraAPI.Controllers
     [ApiController]
     public class UserController
     {
-        private readonly UserRepository _userRepository;
+        private readonly IUserRepository _userRepository;
 
-        public UserController()
+        public UserController(IUserRepository userRepository)
         {
-            _userRepository = new UserRepository();
+            _userRepository = userRepository;
         }
 
         [HttpGet]
-        public IEnumerable<User> GetAllUsers()
+        public async Task<IEnumerable<User>> GetAllUsers()
         {
-            return _userRepository.GetAll();
+            return await _userRepository.GetAll();
         }
         [HttpGet("{id}")]
-        public User GetUser(int id)
+        public async Task<User> GetUser(int id)
         {
-            return _userRepository.GetById(id);
+            return await _userRepository.GetById(id);
         }
 
         [HttpPost]

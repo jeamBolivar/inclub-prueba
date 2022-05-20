@@ -1,13 +1,15 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using CompraAPI.Data;
+using CompraAPI.Interfaces;
 using CompraAPI.Model;
 using Dapper;
 
 namespace CompraAPI.Repositories
 {
-    public class ReportRepository
+    public class ReportRepository : IReportRepository
     {
         private readonly DbContext _dbContext;
         public ReportRepository()
@@ -15,14 +17,14 @@ namespace CompraAPI.Repositories
             _dbContext = new DbContext();
         }       
 
-        public IEnumerable<Order> GetAllOrderByUser(int userId)
+        public async Task<IEnumerable<Order>> GetAllOrderByUser(int userId)
         {
             using (IDbConnection dbConnection = _dbContext.Connection)   
             {
                 string sQuery = "GetOrders"; 
                 var orderDictionary = new Dictionary<int, Order>();               
                 dbConnection.Open();
-                var orders = dbConnection.Query<Order,OrderProduct, Order>(
+                var ordersResult = await dbConnection.QueryAsync<Order,OrderProduct, Order>(
                     sQuery,                    
                     (order, orderProduct) =>
                     {
@@ -38,11 +40,9 @@ namespace CompraAPI.Repositories
                     },
                     new { userId = userId},
                     commandType: CommandType.StoredProcedure,
-                    splitOn: "Id")
-                .Distinct()
-                .ToList();
-
-                return orders;                         
+                    splitOn: "Id");               
+                List<Order> orders = ordersResult.Distinct().ToList();
+                return orders;                                      
             }
         }
     }

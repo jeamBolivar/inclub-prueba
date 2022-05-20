@@ -3,12 +3,13 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using CompraAPI.Data;
+using CompraAPI.Interfaces;
 using CompraAPI.Model;
 using Dapper;
 
 namespace CompraAPI.Repositories
 {
-    public class OrderRepository
+    public class OrderRepository : IOrderRepository
     {
         private readonly DbContext _dbContext;
         public OrderRepository()
@@ -38,14 +39,14 @@ namespace CompraAPI.Repositories
             }
         }
 
-        public IEnumerable<Order> GetAll()
+        public async Task<IEnumerable<Order>> GetAll()
         {
             using (IDbConnection dbConnection = _dbContext.Connection)   
             {
                 string sQuery = @"SELECT * FROM orders o LEFT JOIN order_product op ON o.id = op.order_id";
                 var orderDictionary = new Dictionary<int, Order>();
                 dbConnection.Open();
-                var orders = dbConnection.Query<Order,OrderProduct, Order>(
+                var ordersResult = await dbConnection.QueryAsync<Order,OrderProduct, Order>(
                     sQuery,
                     (order, orderProduct) =>
                     {
@@ -59,21 +60,19 @@ namespace CompraAPI.Repositories
                         orderEntry.products.Add(orderProduct);
                         return orderEntry;
                     },
-                    splitOn: "Id")
-                .Distinct()
-                .ToList();
-
+                    splitOn: "Id");
+                List<Order> orders = ordersResult.Distinct().ToList();
                 return orders;                
             }
         }
 
-        public Order GetById(int id)
+        public async Task<Order> GetById(int id)
         {
             using (IDbConnection dbConnection = _dbContext.Connection)   
             {
                 string sQuery = @"SELECT * FROM orders WHERE id=@Id";
                 dbConnection.Open();
-                return dbConnection.Query<Order>(sQuery, new {Id = id}).FirstOrDefault();               
+                return await dbConnection.QueryFirstOrDefaultAsync<Order>(sQuery, new {Id = id});
             }
         }
 

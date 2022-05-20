@@ -1,3 +1,7 @@
+using CompraAPI.Interfaces;
+using CompraAPI.Options;
+using CompraAPI.Repositories;
+using CompraAPI.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +23,13 @@ namespace CompraAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();   
+            services.AddControllers();
+            services.Configure<PasswordOptions>(Configuration.GetSection("PasswordOptions"));
+            services.AddTransient<IUserRepository, UserRepository>();
+            services.AddTransient<IOrderRepository, OrderRepository>();
+            services.AddTransient<IProductRepository, ProductRepository>();
+            services.AddTransient<IReportRepository, ReportRepository>();
+            services.AddTransient<IPasswordHasher, PasswordService>();
             services.AddSwaggerGen(c=>
             {
                 c.SwaggerDoc("v1",new OpenApiInfo {Title="My Shop API", Version="v1"});

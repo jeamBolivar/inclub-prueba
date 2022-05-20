@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using CompraAPI.Interfaces;
 using CompraAPI.Model;
 using CompraAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -9,18 +11,18 @@ namespace CompraAPI.Controllers
     [ApiController]
     public class ReportController
     {
-        private readonly ReportRepository _reportRepository;
+        private readonly IReportRepository _reportRepository;
 
-        public ReportController()
+        public ReportController(IReportRepository reportRepository)
         {
-            _reportRepository = new ReportRepository();
+            _reportRepository = reportRepository;
         }
 
         
         [HttpGet("{userId}")]
-        public IEnumerable<Order> GetOrdersByUser(int userId)
+        public async Task<IEnumerable<Order>> GetOrdersByUser(int userId)
         {
-            return _reportRepository.GetAllOrderByUser(userId);
+            return await _reportRepository.GetAllOrderByUser(userId);
         }          
 
     }

@@ -1,13 +1,15 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using CompraAPI.Data;
+using CompraAPI.Interfaces;
 using CompraAPI.Model;
 using Dapper;
 
 namespace CompraAPI.Repositories
 {
-    public class ProductRepository
+    public class ProductRepository : IProductRepository
     {
         private readonly DbContext _dbContext;
         public ProductRepository()
@@ -26,23 +28,23 @@ namespace CompraAPI.Repositories
             }
         }
 
-        public IEnumerable<Product> GetAll()
+        public async Task<IEnumerable<Product>> GetAll()
         {
             using (IDbConnection dbConnection = _dbContext.Connection)   
             {
                 string sQuery = @"SELECT * FROM products";
                 dbConnection.Open();
-                return dbConnection.Query<Product>(sQuery);               
+                return await dbConnection.QueryAsync<Product>(sQuery);               
             }
         }
 
-        public Product GetById(int id)
+        public async Task<Product> GetById(int id)
         {
             using (IDbConnection dbConnection = _dbContext.Connection)   
             {
                 string sQuery = @"SELECT * FROM products WHERE id=@Id";
                 dbConnection.Open();
-                return dbConnection.Query<Product>(sQuery, new {Id = id}).FirstOrDefault();               
+                return await dbConnection.QueryFirstOrDefaultAsync<Product>(sQuery, new {Id = id});               
             }
         }
 

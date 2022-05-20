@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using CompraAPI.Interfaces;
 using CompraAPI.Model;
 using CompraAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -9,22 +11,22 @@ namespace CompraAPI.Controllers
     [ApiController]
     public class ProductController
     {
-        private readonly ProductRepository _productRepository;
+        private readonly IProductRepository _productRepository;
 
-        public ProductController()
+        public ProductController(IProductRepository productRepository)
         {
-            _productRepository = new ProductRepository();
+            _productRepository = productRepository;
         }
 
         [HttpGet]
-        public IEnumerable<Product> GetAllProducts()
+        public async Task<IEnumerable<Product>> GetAllProducts()
         {
-            return _productRepository.GetAll();
+            return await _productRepository.GetAll();
         }
         [HttpGet("{id}")]
-        public Product GetProduct(int id)
+        public async Task<Product> GetProduct(int id)
         {
-            return _productRepository.GetById(id);
+            return await _productRepository.GetById(id);
         }
 
         [HttpPost]
