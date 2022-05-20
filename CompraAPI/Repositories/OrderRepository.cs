@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
 using CompraAPI.Data;
 using CompraAPI.Model;
 using Dapper;
@@ -25,7 +27,7 @@ namespace CompraAPI.Repositories
                 string sQuery2 = @"INSERT INTO order_product (order_id,product_id,quantity) VALUES(@order_id,@product_id,@quantity)";
                 foreach (var item in order.products)
                 {
-                    dbConnection.Execute(sQuery2, new { order_id = orderId, product_id = item.product_id, quantity = item.quantity});                                   
+                    dbConnection.Execute(sQuery2, new { order_id = orderId, product_id = item.product_id, quantity = item.quantity});
                 }
 
                 string sQuery3 = @"SELECT SUM (p.price*o.quantity) FROM order_product o LEFT JOIN products p ON o.product_id = p.id WHERE o.order_id = @orderId";
@@ -36,23 +38,42 @@ namespace CompraAPI.Repositories
             }
         }
 
-        /*public IEnumerable<Order> GetAll()
+        public IEnumerable<Order> GetAll()
         {
             using (IDbConnection dbConnection = _dbContext.Connection)   
             {
-                string sQuery = @"SELECT * FROM products";
+                string sQuery = @"SELECT * FROM orders o LEFT JOIN order_product op ON o.id = op.order_id";
+                var orderDictionary = new Dictionary<int, Order>();
                 dbConnection.Open();
-                return dbConnection.Query<Product>(sQuery);               
+                var orders = dbConnection.Query<Order,OrderProduct, Order>(
+                    sQuery,
+                    (order, orderProduct) =>
+                    {
+                        Order orderEntry;
+                        if (!orderDictionary.TryGetValue(order.id, out orderEntry))
+                        {
+                            orderEntry = order;
+                            orderEntry.products = new List<OrderProduct>();
+                            orderDictionary.Add(orderEntry.id, orderEntry);
+                        }
+                        orderEntry.products.Add(orderProduct);
+                        return orderEntry;
+                    },
+                    splitOn: "Id")
+                .Distinct()
+                .ToList();
+
+                return orders;                
             }
         }
 
-        public Product GetById(int id)
+        public Order GetById(int id)
         {
             using (IDbConnection dbConnection = _dbContext.Connection)   
             {
-                string sQuery = @"SELECT * FROM products WHERE id=@Id";
+                string sQuery = @"SELECT * FROM orders WHERE id=@Id";
                 dbConnection.Open();
-                return dbConnection.Query<Product>(sQuery, new {Id = id}).FirstOrDefault();               
+                return dbConnection.Query<Order>(sQuery, new {Id = id}).FirstOrDefault();               
             }
         }
 
@@ -60,20 +81,31 @@ namespace CompraAPI.Repositories
         {
             using (IDbConnection dbConnection = _dbContext.Connection)   
             {
-                string sQuery = @"DELETE FROM products WHERE id=@Id";
+                string sQuery = @"DELETE FROM order_product WHERE order_id=@Id";
+                string sQuery2 = @"DELETE FROM orders WHERE id=@Id";
                 dbConnection.Open();
                 dbConnection.Execute(sQuery, new {Id = id});
+                dbConnection.Execute(sQuery2, new {Id = id});
             }
         }
 
-        public void Update(Product product)
+        public void Update(Order order)
         {
             using (IDbConnection dbConnection = _dbContext.Connection)   
             {
-                string sQuery = @"UPDATE products SET description=@description,price=@price WHERE id=@id";
+                string sQuery = @"UPDATE orders SET user_id=@user_id WHERE id=@id";
                 dbConnection.Open();
-                dbConnection.Query(sQuery, product);
+                dbConnection.Query(sQuery, order);
+
+                string sQuery2 = @"UPDATE order_product SET product_id=@product_id,quantity=@quantity WHERE id=@id";
+                dbConnection.Execute(sQuery2, order.products);
+
+                string sQuery3 = @"SELECT SUM (p.price*o.quantity) FROM order_product o LEFT JOIN products p ON o.product_id = p.id WHERE o.order_id = @orderId";
+                var total = dbConnection.ExecuteScalar<int>(sQuery3, new {orderId = order.id});
+
+                string sQuery4 = @"UPDATE orders SET total=@total WHERE id=@orderId";                
+                dbConnection.Query(sQuery4, new {total = total, orderId = order.id});               
             }
-        }*/
+        }
     }
 }
